@@ -17,7 +17,6 @@
   --muted:#9aa4b2;
 }
 
-/* RESET */
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 
@@ -246,12 +245,6 @@ h2::after{
   border-radius:22px;
   padding:2.1rem;
   transition:.4s;
-  animation:cardFade .8s ease forwards;
-}
-
-@keyframes cardFade{
-  from{opacity:0;transform:translateY(20px)}
-  to{opacity:1;transform:none}
 }
 
 .card:hover{
@@ -298,8 +291,6 @@ footer p,footer a{color:var(--muted);font-size:.95rem}
 .ats{
   position:absolute;
   left:-9999px;
-  height:1px;width:1px;
-  overflow:hidden;
 }
 
 /* RESPONSIVE */
@@ -340,6 +331,7 @@ Linux Security Wireshark Nmap Metasploit Burp Suite
     <div class="menu-btn" onclick="toggleMenu()">☰</div>
     <nav id="nav">
       <a href="#home">Home</a>
+      <a href="#about">About</a>
       <a href="#education">Education</a>
       <a href="#skills">Skills</a>
       <a href="#projects">Projects</a>
@@ -367,6 +359,27 @@ Linux Security Wireshark Nmap Metasploit Burp Suite
     <img src="Profile.jpeg" alt="Amit Prajapati">
   </div>
 </div>
+
+<!-- ABOUT -->
+<section id="about">
+  <h2>About Me</h2>
+  <div class="grid">
+    <div class="card">
+      <p style="color:var(--muted); line-height:1.7;">
+        MSc Cyber Security student focused on defensive security,
+        DFIR, and malware analysis. I enjoy understanding how attacks
+        work at a low level — from persistence techniques to log-based
+        detection — and translating that knowledge into practical
+        SOC and incident response workflows.
+        <br><br>
+        Currently seeking internship or entry-level opportunities
+        where I can contribute to threat detection, investigation,
+        and continuous security improvement while learning from
+        real-world incidents.
+      </p>
+    </div>
+  </div>
+</section>
 
 <!-- EDUCATION -->
 <section id="education">
@@ -462,10 +475,10 @@ Linux Security Wireshark Nmap Metasploit Burp Suite
     </div>
     <div>
       <h4>Quick Links</h4>
+      <a href="#about">About</a><br>
       <a href="#education">Education</a><br>
       <a href="#skills">Skills</a><br>
-      <a href="#projects">Projects</a><br>
-      <a href="#certs">Certifications</a>
+      <a href="#projects">Projects</a>
     </div>
     <div>
       <h4>Contact</h4>
@@ -482,7 +495,6 @@ function toggleMenu(){
   document.getElementById("nav").classList.toggle("show");
 }
 
-/* Scroll reveal */
 const sections = document.querySelectorAll("section");
 const observer = new IntersectionObserver(entries=>{
   entries.forEach(entry=>{
