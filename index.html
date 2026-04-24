@@ -1,528 +1,1227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Amit Prajapati | Cyber Security Portfolio</title>
-
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
-
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Amit Prajapati | DFIR & Cybersecurity</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
+/* ── RESET & VARIABLES ─────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+
 :root{
-  --bg:#04060d;
-  --border:rgba(255,255,255,.12);
-  --accent:#00eaff;
-  --accent2:#7c7cff;
-  --text:#e6edf3;
-  --muted:#9aa4b2;
+  --bg:#010508;
+  --bg2:#050d14;
+  --c1:#00f5c4;
+  --c2:#7c3aed;
+  --c3:#f43f5e;
+  --text:#dde6ee;
+  --muted:#5b7a96;
+  --border:rgba(0,245,196,.15);
+  --card:rgba(5,20,35,.7);
+  --font:'Syne',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
 }
 
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-
 body{
-  font-family:'Space Grotesk',sans-serif;
-  background:
-    radial-gradient(900px 500px at 80% -10%,rgba(124,124,255,.15),transparent),
-    radial-gradient(700px 400px at 10% 20%,rgba(0,234,255,.12),transparent),
-    var(--bg);
+  font-family:var(--font);
+  background:var(--bg);
   color:var(--text);
   overflow-x:hidden;
+  cursor:none;
 }
 
 a{text-decoration:none;color:inherit}
 
-/* GRID BACKGROUND */
-.bg-grid{
-  position:fixed;
-  inset:0;
-  background:
-    linear-gradient(to right,rgba(255,255,255,.035) 1px,transparent 1px),
-    linear-gradient(to bottom,rgba(255,255,255,.035) 1px,transparent 1px);
-  background-size:60px 60px;
-  pointer-events:none;
-  z-index:-1;
-  animation:gridFloat 80s linear infinite;
+/* ── CUSTOM CURSOR ─────────────────────────────────────────────────── */
+#cursor{
+  position:fixed;width:10px;height:10px;
+  background:var(--c1);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:width .2s,height .2s,background .2s;
+  box-shadow:0 0 20px var(--c1);
+}
+#cursor-ring{
+  position:fixed;width:38px;height:38px;
+  border:1.5px solid rgba(0,245,196,.5);
+  border-radius:50%;
+  pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:transform .12s ease,width .2s,height .2s;
+}
+body:has(a:hover) #cursor,
+body:has(button:hover) #cursor{width:20px;height:20px;background:var(--c2)}
+body:has(a:hover) #cursor-ring,
+body:has(button:hover) #cursor-ring{width:56px;height:56px;border-color:var(--c2)}
+
+/* ── CANVAS ────────────────────────────────────────────────────────── */
+#three-canvas{
+  position:fixed;inset:0;z-index:0;
+  pointer-events:none;opacity:.75;
 }
 
-@keyframes gridFloat{
-  from{transform:translateY(0)}
-  to{transform:translateY(-60px)}
+/* ── SCANLINE OVERLAY ──────────────────────────────────────────────── */
+.scanline{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,transparent,transparent 2px,
+    rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px
+  );
 }
 
-/* HEADER */
+/* ── NOISE GRAIN ───────────────────────────────────────────────────── */
+.grain{
+  position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* ── HEADER ────────────────────────────────────────────────────────── */
 header{
-  position:fixed;
-  top:0;left:0;right:0;
-  backdrop-filter:blur(14px);
-  background:rgba(4,6,13,.9);
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  backdrop-filter:blur(20px) saturate(180%);
+  background:rgba(1,5,8,.85);
   border-bottom:1px solid var(--border);
-  z-index:10;
 }
-
 header .wrap{
-  max-width:1200px;
-  margin:auto;
-  padding:1.1rem 2rem;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  max-width:1200px;margin:auto;
+  padding:1rem 2rem;
+  display:flex;justify-content:space-between;align-items:center;
 }
-
 .logo{
-  font-family:'JetBrains Mono',monospace;
-  color:var(--accent);
-  font-weight:600;
+  font-family:var(--mono);font-size:.95rem;
+  color:var(--c1);letter-spacing:.04em;
 }
-
-nav{
-  display:flex;
-  gap:1.5rem;
-}
-
+.logo span{color:var(--muted)}
+nav{display:flex;gap:2rem;align-items:center}
 nav a{
-  font-size:.95rem;
-  color:var(--muted);
-  position:relative;
+  font-size:.85rem;font-weight:600;letter-spacing:.06em;
+  color:var(--muted);text-transform:uppercase;
+  transition:color .3s;position:relative;
 }
-
 nav a::after{
-  content:"";
-  position:absolute;
-  left:0;bottom:-6px;
-  width:0;height:2px;
-  background:var(--accent);
-  transition:.3s;
+  content:"";position:absolute;bottom:-4px;left:0;
+  width:0;height:1px;background:var(--c1);
+  transition:width .3s;
 }
-
-nav a:hover{color:var(--accent)}
+nav a:hover{color:var(--c1)}
 nav a:hover::after{width:100%}
+.nav-cta{
+  padding:.55rem 1.2rem;
+  border:1px solid var(--c1);
+  border-radius:8px;color:var(--c1)!important;
+  font-size:.82rem!important;
+  transition:background .3s,box-shadow .3s!important;
+}
+.nav-cta:hover{background:rgba(0,245,196,.1);box-shadow:0 0 20px rgba(0,245,196,.3)}
+.nav-cta::after{display:none!important}
+.ham{display:none;flex-direction:column;gap:5px;cursor:pointer;z-index:200}
+.ham span{width:24px;height:2px;background:var(--c1);transition:.3s;display:block}
 
-.menu-btn{
-  display:none;
-  font-size:1.6rem;
-  color:var(--accent);
-  cursor:pointer;
+/* ── HERO ──────────────────────────────────────────────────────────── */
+#home{
+  position:relative;z-index:2;
+  min-height:100vh;display:flex;align-items:center;
+  padding:9rem 2rem 5rem;
+}
+.hero-inner{
+  max-width:1200px;margin:auto;width:100%;
+  display:grid;grid-template-columns:1fr 420px;gap:4rem;align-items:center;
+}
+.tag{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.38rem .9rem;border-radius:999px;
+  background:rgba(0,245,196,.08);
+  border:1px solid rgba(0,245,196,.2);
+  font-family:var(--mono);font-size:.72rem;
+  color:var(--c1);letter-spacing:.05em;
+  margin-bottom:1.5rem;
+}
+.tag::before{
+  content:"";width:6px;height:6px;border-radius:50%;
+  background:var(--c1);animation:blink 1.4s infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+.hero-name{
+  font-size:clamp(2.8rem,6vw,5rem);
+  font-weight:800;line-height:1;
+  letter-spacing:-.02em;
+  margin-bottom:.6rem;
+}
+.hero-name .first{color:var(--text)}
+.hero-name .last{
+  -webkit-text-stroke:1.5px var(--c1);
+  color:transparent;
 }
 
-/* HERO */
-.hero-section{
-  min-height:100vh;
-  display:grid;
-  place-items:center;
-  padding:9rem 2rem 4rem;
+.hero-role{
+  font-family:var(--mono);font-size:1.05rem;
+  color:var(--c1);margin-bottom:1.6rem;
+  min-height:1.6rem;
 }
+.cursor-blink{animation:blink .8s infinite;color:var(--c1)}
 
-.hero{
-  max-width:1100px;
-  display:grid;
-  grid-template-columns:1.2fr .8fr;
-  gap:3.5rem;
-  align-items:center;
-}
-
-.hero-content{
-  animation:fadeUp .9s ease forwards;
-}
-
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(30px)}
-  to{opacity:1;transform:none}
-}
-
-.badge{
-  display:inline-block;
-  padding:.45rem .9rem;
-  border-radius:999px;
-  font-size:.75rem;
-  font-weight:600;
-  background:rgba(0,234,255,.15);
-  color:var(--accent);
-  margin-bottom:1.2rem;
-}
-
-.hero h1{
-  font-size:3.2rem;
-  line-height:1.05;
-}
-
-.hero h1 span{
-  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));
-  background-size:200%;
-  animation:gradientMove 6s linear infinite;
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-
-@keyframes gradientMove{
-  from{background-position:0%}
-  to{background-position:200%}
-}
-
-.hero p{
-  margin:1.6rem 0 2.4rem;
-  color:var(--muted);
-  max-width:520px;
-}
-
-.btns a{
-  display:inline-block;
-  padding:1rem 1.9rem;
-  border-radius:14px;
-  margin-right:1rem;
-  font-weight:600;
-  transition:.35s;
-}
-
-.primary{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  color:#04060d;
-}
-
-.ghost{
-  border:1px solid var(--border);
-}
-
-.btns a:hover{
-  transform:translateY(-6px);
-  box-shadow:0 20px 60px rgba(0,234,255,.45);
-}
-
-/* HERO IMAGE */
-.hero img{
-  width:320px;
-  border-radius:26px;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.08),
-    0 0 90px rgba(0,234,255,.45);
-  animation:float 6s ease-in-out infinite;
-}
-
-@keyframes float{
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-12px)}
-}
-
-/* SECTIONS */
-section{
-  max-width:1200px;
-  margin:auto;
-  padding:6.5rem 2rem;
-  opacity:0;
-  transform:translateY(40px);
-  transition:1s ease;
-}
-
-section.show{
-  opacity:1;
-  transform:none;
-}
-
-h2{
-  font-size:2.3rem;
+.hero-desc{
+  color:var(--muted);line-height:1.8;
+  max-width:540px;font-size:1rem;
   margin-bottom:2.8rem;
-  position:relative;
 }
 
-h2::after{
-  content:"";
-  position:absolute;
-  bottom:-12px;left:0;
-  width:70px;height:3px;
-  background:linear-gradient(90deg,var(--accent),transparent);
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
+.btn-primary{
+  padding:.9rem 2rem;
+  background:linear-gradient(135deg,var(--c1),#00cfaa);
+  color:#010508;font-weight:700;
+  border-radius:12px;font-size:.9rem;
+  transition:transform .3s,box-shadow .3s;
+  position:relative;overflow:hidden;
 }
-
-/* GRID */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:2.2rem;
+.btn-primary::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent,rgba(255,255,255,.2),transparent);
+  transform:translateX(-100%);transition:transform .5s;
 }
-
-.card{
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+.btn-primary:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,245,196,.35)}
+.btn-primary:hover::after{transform:translateX(100%)}
+.btn-ghost{
+  padding:.9rem 2rem;
   border:1px solid var(--border);
-  border-radius:22px;
-  padding:2.1rem;
-  transition:.4s;
+  color:var(--text);border-radius:12px;
+  font-size:.9rem;font-weight:600;
+  background:rgba(255,255,255,.03);
+  transition:border-color .3s,background .3s,transform .3s;
+}
+.btn-ghost:hover{border-color:var(--c1);background:rgba(0,245,196,.05);transform:translateY(-4px)}
+
+/* HERO STATS */
+.hero-stats{
+  display:flex;gap:2.5rem;margin-top:3rem;
+  padding-top:2rem;border-top:1px solid var(--border);
+}
+.stat-num{
+  font-size:2rem;font-weight:800;color:var(--c1);
+  line-height:1;
+}
+.stat-label{font-size:.78rem;color:var(--muted);margin-top:.3rem;text-transform:uppercase;letter-spacing:.06em}
+
+/* HERO CARD (right side) */
+.hero-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:2rem;
+  backdrop-filter:blur(20px);
+  position:relative;
+  animation:floatCard 5s ease-in-out infinite;
+}
+@keyframes floatCard{0%,100%{transform:translateY(0) rotateY(0deg)}50%{transform:translateY(-10px) rotateY(2deg)}}
+
+.hero-card::before{
+  content:"";position:absolute;inset:-1px;border-radius:24px;
+  background:linear-gradient(135deg,rgba(0,245,196,.3),transparent,rgba(124,58,237,.2));
+  z-index:-1;pointer-events:none;
+}
+.hc-header{
+  display:flex;align-items:center;gap:.8rem;margin-bottom:1.5rem;
+}
+.hc-avatar{
+  width:56px;height:56px;border-radius:14px;
+  flex-shrink:0;overflow:hidden;
+  border:2px solid rgba(0,245,196,.35);
+  box-shadow:0 0 20px rgba(0,245,196,.2);
+}
+.hc-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.hc-name{font-weight:700;font-size:1rem}
+.hc-sub{font-size:.75rem;color:var(--muted);margin-top:.1rem;font-family:var(--mono)}
+.hc-status{
+  display:flex;align-items:center;gap:.4rem;
+  font-family:var(--mono);font-size:.7rem;color:var(--c1);
+  background:rgba(0,245,196,.08);
+  padding:.3rem .7rem;border-radius:999px;
+  border:1px solid rgba(0,245,196,.15);
+  margin-left:auto;white-space:nowrap;
+}
+.hc-status::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--c1);animation:blink 1.4s infinite}
+
+.hc-tools{
+  display:grid;grid-template-columns:1fr 1fr;gap:.6rem;
+  margin-bottom:1.5rem;
+}
+.tool-chip{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:.5rem .7rem;
+  font-family:var(--mono);font-size:.7rem;color:var(--muted);
+  transition:border-color .3s,color .3s;
+}
+.tool-chip:hover{border-color:var(--c1);color:var(--c1)}
+
+.hc-bar-wrap{margin-bottom:1rem}
+.hc-bar-label{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.4rem;font-family:var(--mono)}
+.hc-bar-track{height:4px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden}
+.hc-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--c1),var(--c2));animation:barGrow 1.5s ease forwards;width:0}
+@keyframes barGrow{to{width:var(--w)}}
+
+/* ── SECTION BASE ──────────────────────────────────────────────────── */
+.section{
+  position:relative;z-index:2;
+  max-width:1200px;margin:auto;
+  padding:6rem 2rem;
+  opacity:0;transform:translateY(50px);
+  transition:opacity .8s ease,transform .8s ease;
+}
+.section.visible{opacity:1;transform:none}
+
+.section-tag{
+  font-family:var(--mono);font-size:.72rem;
+  color:var(--c1);letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:.8rem;
+}
+.section-title{
+  font-size:clamp(2rem,4vw,3rem);
+  font-weight:800;letter-spacing:-.02em;
+  margin-bottom:1rem;
+}
+.section-title em{
+  font-style:normal;
+  -webkit-text-stroke:1px var(--c1);
+  color:transparent;
+}
+.section-desc{color:var(--muted);max-width:560px;line-height:1.8;margin-bottom:3.5rem}
+
+/* ── ABOUT ─────────────────────────────────────────────────────────── */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+.about-text{color:var(--muted);line-height:1.9;font-size:.97rem}
+.about-text p{margin-bottom:1.2rem}
+.about-text strong{color:var(--c1);font-weight:600}
+
+.about-right{display:flex;flex-direction:column;gap:1.2rem}
+.info-row{
+  display:flex;align-items:center;gap:1rem;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:1.1rem 1.4rem;
+  backdrop-filter:blur(10px);
+  transition:border-color .3s,transform .3s;
+}
+.info-row:hover{border-color:var(--c1);transform:translateX(6px)}
+.info-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:rgba(0,245,196,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;
+}
+.info-label{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.info-val{font-size:.9rem;font-weight:600;margin-top:.1rem}
+
+/* ── EXPERIENCE TIMELINE ───────────────────────────────────────────── */
+.timeline{position:relative;padding-left:2rem}
+.timeline::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;
+  width:1px;background:linear-gradient(to bottom,var(--c1),var(--c2),transparent);
+}
+.tl-item{
+  position:relative;margin-bottom:3rem;
+  opacity:0;transform:translateX(-20px);
+  transition:opacity .6s ease,transform .6s ease;
+}
+.tl-item.visible{opacity:1;transform:none}
+.tl-dot{
+  position:absolute;left:-2.45rem;top:.35rem;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--bg);
+  border:2px solid var(--c1);
+  box-shadow:0 0 12px var(--c1);
+}
+.tl-date{
+  font-family:var(--mono);font-size:.72rem;
+  color:var(--c1);margin-bottom:.5rem;letter-spacing:.06em;
+}
+.tl-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:18px;padding:1.8rem;backdrop-filter:blur(16px);
+  transition:border-color .4s,box-shadow .4s;
+}
+.tl-card:hover{border-color:var(--c1);box-shadow:0 0 40px rgba(0,245,196,.08)}
+.tl-title{font-size:1.05rem;font-weight:700;margin-bottom:.3rem}
+.tl-org{font-family:var(--mono);font-size:.8rem;color:var(--c1);margin-bottom:1rem}
+.tl-bullets{list-style:none;display:flex;flex-direction:column;gap:.55rem}
+.tl-bullets li{
+  padding-left:1.2rem;position:relative;
+  font-size:.9rem;color:var(--muted);line-height:1.6;
+}
+.tl-bullets li::before{
+  content:"▹";position:absolute;left:0;color:var(--c1);
 }
 
-.card:hover{
-  transform:translateY(-10px);
-  border-color:var(--accent);
-  box-shadow:0 30px 90px rgba(0,0,0,.6),
-             0 0 40px rgba(0,234,255,.25);
+/* ── SKILLS ────────────────────────────────────────────────────────── */
+.skills-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.skill-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:18px;padding:1.8rem;
+  backdrop-filter:blur(16px);
+  transition:border-color .3s,transform .3s,box-shadow .3s;
+  position:relative;overflow:hidden;
 }
-
-ul{list-style:none;margin-top:1.2rem}
-li{
-  font-family:'JetBrains Mono',monospace;
-  font-size:.9rem;
-  margin:.5rem 0;
+.skill-card::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at top left,rgba(0,245,196,.07),transparent);
+  opacity:0;transition:opacity .4s;
+}
+.skill-card:hover{border-color:var(--c1);transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 30px rgba(0,245,196,.1)}
+.skill-card:hover::before{opacity:1}
+.sk-icon{font-size:1.8rem;margin-bottom:.9rem}
+.sk-cat{font-size:.72rem;font-family:var(--mono);color:var(--c1);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem}
+.sk-title{font-size:1rem;font-weight:700;margin-bottom:1rem}
+.sk-tags{display:flex;flex-wrap:wrap;gap:.4rem}
+.sk-tag{
+  font-family:var(--mono);font-size:.68rem;
+  padding:.25rem .55rem;border-radius:6px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
   color:var(--muted);
 }
 
-/* FOOTER */
+/* ── PROJECTS ──────────────────────────────────────────────────────── */
+.proj-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:22px;padding:2.2rem;
+  backdrop-filter:blur(20px);
+  transition:border-color .4s,transform .4s,box-shadow .4s;
+  position:relative;overflow:hidden;
+}
+.proj-card::after{
+  content:"";position:absolute;
+  top:0;right:0;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(0,245,196,.08),transparent 70%);
+  transform:translate(50%,-50%);pointer-events:none;
+}
+.proj-card:hover{border-color:var(--c1);transform:translateY(-8px);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 50px rgba(0,245,196,.12)}
+.proj-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.2rem}
+.proj-label{font-family:var(--mono);font-size:.7rem;color:var(--c1);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem}
+.proj-title{font-size:1.1rem;font-weight:700}
+.proj-icon{
+  width:48px;height:48px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(0,245,196,.15),rgba(124,58,237,.15));
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:1.4rem;
+}
+.proj-desc{color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:1.4rem}
+.proj-tags{display:flex;flex-wrap:wrap;gap:.4rem}
+.proj-tag{
+  font-family:var(--mono);font-size:.68rem;
+  padding:.3rem .65rem;border-radius:7px;
+  background:rgba(0,245,196,.08);
+  border:1px solid rgba(0,245,196,.15);
+  color:var(--c1);
+}
+
+/* ── CERTS ─────────────────────────────────────────────────────────── */
+.certs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.cert-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:18px;padding:1.6rem;
+  backdrop-filter:blur(16px);
+  transition:border-color .3s,transform .3s;
+  display:flex;gap:1rem;align-items:flex-start;
+}
+.cert-card:hover{border-color:var(--c1);transform:translateY(-4px)}
+.cert-badge{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(0,245,196,.2),rgba(124,58,237,.15));
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+}
+.cert-issuer{font-family:var(--mono);font-size:.68rem;color:var(--c1);margin-bottom:.3rem;letter-spacing:.06em}
+.cert-title{font-size:.88rem;font-weight:600;line-height:1.4}
+
+/* ── CONTACT ───────────────────────────────────────────────────────── */
+.contact-wrap{
+  display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;
+}
+.contact-text{color:var(--muted);line-height:1.8;font-size:.97rem;margin-bottom:2rem}
+.contact-links{display:flex;flex-direction:column;gap:.9rem}
+.contact-link{
+  display:flex;align-items:center;gap:.9rem;
+  padding:1rem 1.4rem;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);
+  backdrop-filter:blur(10px);
+  transition:border-color .3s,transform .3s;font-size:.9rem;
+}
+.contact-link:hover{border-color:var(--c1);transform:translateX(6px)}
+.cl-icon{font-size:1.1rem;width:20px;text-align:center}
+.cl-label{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.cl-val{font-weight:600}
+
+/* Terminal block */
+.terminal{
+  background:#010e18;border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+  font-family:var(--mono);
+}
+.term-header{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.9rem 1.2rem;
+  background:rgba(255,255,255,.03);
+  border-bottom:1px solid var(--border);
+}
+.dot{width:11px;height:11px;border-radius:50%}
+.dot.r{background:#f43f5e}.dot.y{background:#f59e0b}.dot.g{background:#10b981}
+.term-title{font-size:.72rem;color:var(--muted);margin-left:.5rem}
+.term-body{padding:1.4rem 1.6rem;font-size:.8rem;line-height:2;color:var(--muted)}
+.term-line .cmd{color:var(--c1)}
+.term-line .val{color:var(--text)}
+.term-line .comment{color:#5b7a96}
+.term-prompt{color:var(--c2)}
+
+/* ── FOOTER ────────────────────────────────────────────────────────── */
 footer{
-  background:rgba(4,6,13,.95);
+  position:relative;z-index:2;
   border-top:1px solid var(--border);
-  padding:4.5rem 2rem 2rem;
-}
-
-footer .wrap{
-  max-width:1200px;
-  margin:auto;
-  display:grid;
-  grid-template-columns:2fr 1fr 1fr;
-  gap:2.5rem;
-}
-
-footer h4{color:var(--accent);margin-bottom:1rem}
-footer p,footer a{color:var(--muted);font-size:.95rem}
-
-.copy{
+  background:rgba(1,5,8,.95);
+  backdrop-filter:blur(20px);
+  padding:3rem 2rem;
   text-align:center;
-  margin-top:3rem;
-  font-size:.85rem;
-  color:var(--muted);
+}
+.footer-name{font-size:1.2rem;font-weight:800;color:var(--c1);margin-bottom:.5rem}
+.footer-sub{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.footer-links{display:flex;justify-content:center;gap:2rem;margin-top:1.5rem;flex-wrap:wrap}
+.footer-links a{font-size:.83rem;color:var(--muted);transition:color .3s}
+.footer-links a:hover{color:var(--c1)}
+.copy{margin-top:2rem;font-size:.75rem;color:var(--muted);font-family:var(--mono)}
+
+/* ATS hidden text */
+.ats{position:absolute;left:-9999px;font-size:0;opacity:0;pointer-events:none}
+
+/* ── DIVIDER ───────────────────────────────────────────────────────── */
+.section-divider{
+  position:relative;z-index:2;
+  max-width:1200px;margin:0 auto;padding:0 2rem;
+}
+.divider-line{
+  height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);
 }
 
-/* ATS */
-.ats{
-  position:absolute;
-  left:-9999px;
-}
-
-/* RESPONSIVE */
+/* ── RESPONSIVE ────────────────────────────────────────────────────── */
 @media(max-width:900px){
-  .menu-btn{display:block}
+  .hero-inner{grid-template-columns:1fr;text-align:center}
+  .hero-card{display:none}
+  .hero-desc{margin:0 auto 2.5rem}
+  .hero-btns{justify-content:center}
+  .hero-stats{justify-content:center}
+  .about-grid{grid-template-columns:1fr}
+  .skills-grid{grid-template-columns:1fr 1fr}
+  .contact-wrap{grid-template-columns:1fr}
   nav{
-    position:absolute;
-    top:70px;right:0;
-    background:rgba(4,6,13,.98);
+    position:fixed;inset:0;top:60px;
+    background:rgba(1,5,8,.98);
     flex-direction:column;
-    width:220px;
-    padding:1.5rem;
-    display:none;
-    border-left:1px solid var(--border);
+    align-items:center;justify-content:center;
+    gap:2rem;display:none;
   }
-  nav.show{display:flex}
-  .hero{grid-template-columns:1fr;text-align:center}
-  .hero img{margin:auto}
-  footer .wrap{grid-template-columns:1fr}
+  nav.open{display:flex}
+  .ham{display:flex}
+}
+@media(max-width:600px){
+  .skills-grid{grid-template-columns:1fr}
+  .hero-name{font-size:2.5rem}
+  .hero-stats{flex-wrap:wrap;gap:1.5rem}
 }
 </style>
 </head>
-
 <body>
 
-<div class="bg-grid"></div>
-
+<!-- Hidden ATS keywords -->
 <div class="ats">
-Cyber Security Intern SOC Analyst Fresher DFIR Malware Analysis
-Digital Forensics Incident Response SIEM Log Analysis
-Penetration Testing Threat Intelligence Vulnerability Scanning
-Linux Security Wireshark Nmap Metasploit Burp Suite
+Amit Prajapati DFIR Digital Forensics Incident Response SOC Analyst Cybersecurity
+EnCase FTK Imager Cellebrite UFED Oxygen Forensic Detective Magnet WITNESS
+Malware Analysis Threat Intelligence Wireshark Nmap Metasploit Burp Suite Splunk
+Kali Linux Penetration Testing Vulnerability Assessment Chain of Custody
+MSc Cyber Security Lok Jagruti Kendra University Ahmedabad Gujarat India
+EC-Council IBM Google Coursera Certifications Fresher Entry Level Intern
 </div>
 
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="three-canvas"></canvas>
+<div class="scanline"></div>
+<div class="grain"></div>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────── -->
 <header>
   <div class="wrap">
-    <div class="logo">Amit Prajapati</div>
-    <div class="menu-btn" onclick="toggleMenu()">☰</div>
+    <div class="logo"><span>&gt; </span>amit.prajapati<span>/</span></div>
+    <div class="ham" id="ham" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </div>
     <nav id="nav">
       <a href="#home">Home</a>
       <a href="#about">About</a>
-      <a href="#education">Education</a>
       <a href="#experience">Experience</a>
       <a href="#skills">Skills</a>
       <a href="#projects">Projects</a>
       <a href="#certs">Certifications</a>
-      <a href="https://www.linkedin.com/in/iamiiit17/" target="_blank" style="color:var(--accent)">LinkedIn</a>
+      <a href="#contact" class="nav-cta">Hire Me</a>
     </nav>
   </div>
 </header>
 
-<!-- HERO -->
-<div id="home" class="hero-section">
-  <div class="hero">
+<!-- ── HERO ─────────────────────────────────────────────────────────── -->
+<div id="home" style="position:relative;z-index:2">
+  <div class="hero-inner" style="max-width:1200px;margin:auto;padding:9rem 2rem 5rem;display:grid;grid-template-columns:1fr 420px;gap:4rem;align-items:center">
+
     <div class="hero-content">
-      <span class="badge">MSc Cyber Security</span>
-      <h1>Cyber Security<br><span>Internship & Fresher Roles</span></h1>
-      <p>
-        Cybersecurity postgraduate with hands-on exposure to digital forensics, incident response, malware analysis, and basic reverse engineering.
+      <div class="tag">🔒 Open to DFIR · SOC · Threat Analysis roles</div>
+      <div class="hero-name">
+        <div class="first">Amit</div>
+        <div class="last">Prajapati</div>
+      </div>
+      <div class="hero-role" id="typewriter"><span class="cursor-blink">|</span></div>
+      <p class="hero-desc">
+        Cybersecurity postgraduate specializing in Digital Forensics & Incident Response.
+        Hands-on experience at government forensic labs. Passionate about uncovering
+        digital evidence, analyzing threats, and defending against adversaries.
       </p>
-      <div class="btns">
-        <a class="primary" href="Resume.pdf" target="_blank">View Resume</a>
-        <a class="ghost" href="https://www.linkedin.com/in/iamiiit17/" target="_blank">LinkedIn</a>
+      <div class="hero-btns">
+        <a class="btn-primary" href="Resume.pdf" target="_blank">⬇ Download Resume</a>
+        <a class="btn-ghost" href="https://www.linkedin.com/in/iamiiit17/" target="_blank">LinkedIn →</a>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="stat-num">2+</div>
+          <div class="stat-label">Internships</div>
+        </div>
+        <div>
+          <div class="stat-num">5+</div>
+          <div class="stat-label">Certifications</div>
+        </div>
+        <div>
+          <div class="stat-num">10+</div>
+          <div class="stat-label">Forensic Tools</div>
+        </div>
       </div>
     </div>
-    <img src="Profile.jpeg" alt="Amit Prajapati">
+
+    <!-- RIGHT CARD -->
+    <div class="hero-card">
+      <!-- Profile Photo -->
+      <div style="text-align:center;margin-bottom:1.4rem">
+        <div style="position:relative;display:inline-block">
+          <img src="Profile.png" alt="Amit Prajapati"
+            style="width:110px;height:110px;border-radius:50%;object-fit:cover;
+                   border:2px solid rgba(0,245,196,.4);
+                   box-shadow:0 0 0 6px rgba(0,245,196,.07),0 0 40px rgba(0,245,196,.25);
+                   display:block;margin:auto"/>
+          <div style="position:absolute;bottom:6px;right:6px;
+                      width:16px;height:16px;border-radius:50%;
+                      background:#10b981;border:2px solid #010508;
+                      box-shadow:0 0 8px #10b981"></div>
+        </div>
+      </div>
+      <div class="hc-header">
+        <div class="hc-avatar"><img src="Profile.png" alt="Amit Prajapati"/></div>
+        <div>
+          <div class="hc-name">Amit Prajapati</div>
+          <div class="hc-sub">DFIR Specialist</div>
+        </div>
+        <div class="hc-status">● Available</div>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.7rem">Forensic Arsenal</div>
+      <div class="hc-tools">
+        <div class="tool-chip">EnCase</div>
+        <div class="tool-chip">FTK Imager</div>
+        <div class="tool-chip">Cellebrite UFED</div>
+        <div class="tool-chip">Oxygen Forensic</div>
+        <div class="tool-chip">Magnet WITNESS</div>
+        <div class="tool-chip">Wireshark</div>
+        <div class="tool-chip">Splunk</div>
+        <div class="tool-chip">Metasploit</div>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:.6rem 0 .9rem">Skill Proficiency</div>
+      <div class="hc-bar-wrap">
+        <div class="hc-bar-label"><span>Digital Forensics</span><span>90%</span></div>
+        <div class="hc-bar-track"><div class="hc-bar-fill" style="--w:90%"></div></div>
+      </div>
+      <div class="hc-bar-wrap">
+        <div class="hc-bar-label"><span>Incident Response</span><span>80%</span></div>
+        <div class="hc-bar-track"><div class="hc-bar-fill" style="--w:80%"></div></div>
+      </div>
+      <div class="hc-bar-wrap">
+        <div class="hc-bar-label"><span>Malware Analysis</span><span>70%</span></div>
+        <div class="hc-bar-track"><div class="hc-bar-fill" style="--w:70%"></div></div>
+      </div>
+      <div class="hc-bar-wrap">
+        <div class="hc-bar-label"><span>Penetration Testing</span><span>65%</span></div>
+        <div class="hc-bar-track"><div class="hc-bar-fill" style="--w:65%"></div></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- ABOUT -->
-<section id="about">
-  <h2>About Me</h2>
-  <div class="grid">
-    <div class="card">
-     <p style="color:var(--muted); line-height:1.7;">
-  Cybersecurity postgraduate pursuing an MSc in Cyber Security with hands-on exposure to digital forensics, incident response, malware analysis, and basic reverse engineering. I am particularly interested in DFIR investigations, cybercrime analysis, and defensive security operations, and enjoy understanding how attacks work and how they can be detected and investigated using forensic and security analysis techniques.
-  <br><br>
-  Currently gaining practical experience as a Digital Forensics Intern at the Directorate of Forensic Science (DFS), Surat, while continuously improving my technical skills in threat detection, investigation, and digital evidence analysis.
-</p>
+<!-- ── ABOUT ─────────────────────────────────────────────────────────── -->
+<section class="section" id="about">
+  <div class="section-tag">// 01 · about</div>
+  <h2 class="section-title">Who <em>I Am</em></h2>
+  <div class="about-grid">
+    <div class="about-text">
+      <p>I'm a cybersecurity postgraduate specializing in <strong>Digital Forensics and Incident Response (DFIR)</strong>, currently pursuing my MSc at Lok Jagruti Kendra University, Ahmedabad.</p>
+      <p>My journey into cybersecurity is driven by a passion for <strong>uncovering the truth hidden in digital evidence</strong> — whether that's tracing a cybercriminal through file system artifacts, analyzing malware behavior, or responding to active incidents.</p>
+      <p>I've had the privilege of working at the <strong>Directorate of Forensic Science (DFS), Gandhinagar</strong> — a government law enforcement forensic laboratory — where I perform real forensic investigations on seized devices. Previously, I interned at <strong>RFSL, Surat</strong>, contributing to cybercrime case analysis.</p>
+      <p>I built <strong>ShadowMorph 2.0</strong>, a controlled malware simulation, to understand attacker tradecraft from the inside — how malware persists, evades detection, and communicates — so I can build better defenses.</p>
+    </div>
+    <div class="about-right">
+      <div class="info-row">
+        <div class="info-icon">🎓</div>
+        <div>
+          <div class="info-label">Degree</div>
+          <div class="info-val">MSc Cyber Security (2024–Present)</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">📍</div>
+        <div>
+          <div class="info-label">Location</div>
+          <div class="info-val">Ahmedabad, Gujarat, India</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">🏛️</div>
+        <div>
+          <div class="info-label">Current Internship</div>
+          <div class="info-val">DFS Gandhinagar (Govt. Lab)</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">🎯</div>
+        <div>
+          <div class="info-label">Target Roles</div>
+          <div class="info-val">DFIR Analyst · SOC L1/L2 · Forensic Examiner</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">💬</div>
+        <div>
+          <div class="info-label">Languages</div>
+          <div class="info-val">Gujarati · Hindi · English</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- EDUCATION -->
-<section id="education">
-  <h2>Education</h2>
-  <div class="grid">
-    <div class="card">
-      <h3>MSc Cyber Security</h3>
-      <p>Lok Jagruti Kendra University</p>
-      <p><strong>CGPA:</strong> 6.82 / 10</p>
+<div class="section-divider"><div class="divider-line"></div></div>
+
+<!-- ── EXPERIENCE ─────────────────────────────────────────────────────── -->
+<section class="section" id="experience">
+  <div class="section-tag">// 02 · experience</div>
+  <h2 class="section-title">Where I've <em>Worked</em></h2>
+
+  <div class="timeline">
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-date">▸ APRIL 2026 – PRESENT</div>
+      <div class="tl-card">
+        <div class="tl-title">Digital Forensics Intern</div>
+        <div class="tl-org">Directorate of Forensic Science (DFS) · Gandhinagar, Gujarat</div>
+        <ul class="tl-bullets">
+          <li>Performed forensic acquisition and analysis using EnCase, FTK Imager, Cellebrite UFED & Physical Analyzer, and Oxygen Forensic Detective in an active law enforcement environment.</li>
+          <li>Extracted and analyzed mobile and computer forensic artifacts including call logs, SMS threads, browser history, file system metadata, and third-party app data.</li>
+          <li>Conducted disk imaging and evidence preservation following strict chain-of-custody protocols required for court admissibility.</li>
+          <li>Prepared forensic reports and case documentation to support cybercrime investigators and senior forensic examiners.</li>
+          <li>Gained direct exposure to real-world DFIR workflows and law enforcement investigative procedures in a government setting.</li>
+        </ul>
+      </div>
     </div>
-    <div class="card">
-      <h3>BSc Information Technology</h3>
-      <p>Charusat University</p>
-      <p><strong>CGPA:</strong> 7.80 / 10</p>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-date">▸ MARCH 2026</div>
+      <div class="tl-card">
+        <div class="tl-title">Computer Forensics Intern</div>
+        <div class="tl-org">RFSL · Surat, Gujarat</div>
+        <ul class="tl-bullets">
+          <li>Conducted forensic acquisition and integrity verification of digital evidence from seized mobile and computer devices.</li>
+          <li>Analyzed file system structures, system logs, and user activity data to surface actionable investigative leads for cybercrime cases.</li>
+          <li>Assisted in drafting cybercrime investigation reports, translating technical forensic findings into clear documentation for legal use.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"><div class="divider-line"></div></div>
+
+<!-- ── SKILLS ─────────────────────────────────────────────────────────── -->
+<section class="section" id="skills">
+  <div class="section-tag">// 03 · skills</div>
+  <h2 class="section-title">Technical <em>Arsenal</em></h2>
+  <p class="section-desc">A blend of forensic investigation tools, security operations capabilities, and analysis skills developed through hands-on lab work and real-world internships.</p>
+
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="sk-icon">🔍</div>
+      <div class="sk-cat">Primary Specialty</div>
+      <div class="sk-title">Digital Forensics & DFIR</div>
+      <div class="sk-tags">
+        <span class="sk-tag">EnCase</span>
+        <span class="sk-tag">FTK Imager</span>
+        <span class="sk-tag">Cellebrite UFED</span>
+        <span class="sk-tag">Physical Analyzer</span>
+        <span class="sk-tag">Oxygen Forensic</span>
+        <span class="sk-tag">Magnet WITNESS</span>
+        <span class="sk-tag">Amped FIVE</span>
+        <span class="sk-tag">Chain of Custody</span>
+        <span class="sk-tag">Disk Imaging</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="sk-icon">🛡️</div>
+      <div class="sk-cat">Security Operations</div>
+      <div class="sk-title">Network & SOC</div>
+      <div class="sk-tags">
+        <span class="sk-tag">Wireshark</span>
+        <span class="sk-tag">Splunk</span>
+        <span class="sk-tag">Nmap</span>
+        <span class="sk-tag">Burp Suite</span>
+        <span class="sk-tag">Metasploit</span>
+        <span class="sk-tag">SIEM</span>
+        <span class="sk-tag">Log Analysis</span>
+        <span class="sk-tag">Incident Response</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="sk-icon">🦠</div>
+      <div class="sk-cat">Research</div>
+      <div class="sk-title">Malware & Threat Analysis</div>
+      <div class="sk-tags">
+        <span class="sk-tag">Malware Simulation</span>
+        <span class="sk-tag">Anti-Analysis</span>
+        <span class="sk-tag">Obfuscation</span>
+        <span class="sk-tag">Persistence Mechanisms</span>
+        <span class="sk-tag">Threat Intelligence</span>
+        <span class="sk-tag">IOC Analysis</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="sk-icon">💻</div>
+      <div class="sk-cat">Platforms</div>
+      <div class="sk-title">Operating Systems</div>
+      <div class="sk-tags">
+        <span class="sk-tag">Kali Linux</span>
+        <span class="sk-tag">Ubuntu / Linux CLI</span>
+        <span class="sk-tag">Windows 10 / 11</span>
+        <span class="sk-tag">Windows Artifacts</span>
+        <span class="sk-tag">File Systems (NTFS/FAT)</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="sk-icon">⚗️</div>
+      <div class="sk-cat">Offensive Security</div>
+      <div class="sk-title">Penetration Testing</div>
+      <div class="sk-tags">
+        <span class="sk-tag">Vulnerability Scanning</span>
+        <span class="sk-tag">Enumeration</span>
+        <span class="sk-tag">Exploitation</span>
+        <span class="sk-tag">Post-Exploitation</span>
+        <span class="sk-tag">Cryptography</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="sk-icon">🧠</div>
+      <div class="sk-cat">Soft Skills</div>
+      <div class="sk-title">Core Competencies</div>
+      <div class="sk-tags">
+        <span class="sk-tag">Analytical Thinking</span>
+        <span class="sk-tag">Attention to Detail</span>
+        <span class="sk-tag">Report Writing</span>
+        <span class="sk-tag">Problem Solving</span>
+        <span class="sk-tag">Legal Documentation</span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- EXPERIENCE -->
-<section id="experience">
-  <h2>Experience</h2>
-  <div class="grid">
-    <div class="card">
-      <h3>Digital Forensics Intern</h3>
-      <p><strong>Directorate of Forensic Science (DFS), Surat</strong></p>
-      <p>March 2026 – Present</p>
-      <p>
-        Assisting in digital forensic investigations by supporting evidence
-        acquisition, preservation, and documentation of electronic devices.
-        Participating in the analysis of digital artifacts and system data
-        to support cybercrime investigations and understand DFIR workflows
-        used in forensic laboratories.
+<div class="section-divider"><div class="divider-line"></div></div>
+
+<!-- ── PROJECTS ───────────────────────────────────────────────────────── -->
+<section class="section" id="projects">
+  <div class="section-tag">// 04 · projects</div>
+  <h2 class="section-title">What I've <em>Built</em></h2>
+
+  <div style="display:grid;grid-template-columns:1fr;gap:2rem;max-width:760px">
+    <div class="proj-card">
+      <div class="proj-header">
+        <div>
+          <div class="proj-label">Malware Research · 2025</div>
+          <div class="proj-title">ShadowMorph 2.0 — Malware Simulation & Analysis</div>
+        </div>
+        <div class="proj-icon">🐛</div>
+      </div>
+      <p class="proj-desc">
+        Designed and built a controlled malware simulation environment to study persistence mechanisms, encryption routines, and anti-analysis behaviors in a safe, isolated lab. Mapped the complete malware lifecycle — from initial execution and privilege escalation to C2 communication — to develop defensive detection strategies. Implemented code obfuscation and sandbox-evasion techniques to understand attacker tradecraft, directly improving SOC detection rule accuracy and threat hunting capability.
       </p>
+      <div class="proj-tags">
+        <span class="proj-tag">Malware Analysis</span>
+        <span class="proj-tag">Persistence</span>
+        <span class="proj-tag">Anti-Analysis</span>
+        <span class="proj-tag">C2 Communication</span>
+        <span class="proj-tag">SOC Detection</span>
+        <span class="proj-tag">Threat Research</span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- SKILLS -->
-<section id="skills">
-  <h2>Technical Skills</h2>
-  <div class="grid">
-    <div class="card">
-      <h3>DFIR</h3>
-      <ul>
-        <li>Digital Forensics</li>
-        <li>Incident Response</li>
-        <li>Log Analysis</li>
-        <li>Evidence Handling</li>
-      </ul>
+<div class="section-divider"><div class="divider-line"></div></div>
+
+<!-- ── EDUCATION ──────────────────────────────────────────────────────── -->
+<section class="section" id="education">
+  <div class="section-tag">// 05 · education</div>
+  <h2 class="section-title">Academic <em>Background</em></h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:780px">
+    <div class="tl-card" style="margin:0">
+      <div style="font-family:var(--mono);font-size:.68rem;color:var(--c1);margin-bottom:.6rem">2024 – PRESENT</div>
+      <div class="tl-title">MSc in Cyber Security</div>
+      <div class="tl-org" style="margin-bottom:.8rem">Lok Jagruti Kendra University · Ahmedabad</div>
+      <div style="font-family:var(--mono);font-size:.8rem;color:var(--muted)">CGPA: <span style="color:var(--c1);font-weight:600">6.82 / 10</span></div>
     </div>
-    <div class="card">
-      <h3>Security</h3>
-      <ul>
-        <li>Penetration Testing</li>
-        <li>Threat Intelligence</li>
-        <li>Vulnerability Scanning</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Tools</h3>
-      <ul>
-        <li>Kali Linux, Metasploit</li>
-        <li>Nmap, Burp Suite</li>
-        <li>Wireshark</li>
-        <li>SOC Monitoring</li>
-      </ul>
+    <div class="tl-card" style="margin:0">
+      <div style="font-family:var(--mono);font-size:.68rem;color:var(--c1);margin-bottom:.6rem">2021 – 2024</div>
+      <div class="tl-title">BSc in Information Technology</div>
+      <div class="tl-org" style="margin-bottom:.8rem">Charusat University · Anand</div>
+      <div style="font-family:var(--mono);font-size:.8rem;color:var(--muted)">CGPA: <span style="color:var(--c1);font-weight:600">7.80 / 10</span></div>
     </div>
   </div>
 </section>
 
-<!-- PROJECT -->
-<section id="projects">
-  <h2>Project</h2>
-  <div class="card">
-    <h3>ShadowMorph 2.0 – Malware Simulation</h3>
-    <p>
-      Academic malware simulation focusing on persistence,
-      encryption, and anti-analysis techniques to understand
-      malware lifecycle and SOC detection.
-    </p>
+<div class="section-divider"><div class="divider-line"></div></div>
+
+<!-- ── CERTIFICATIONS ─────────────────────────────────────────────────── -->
+<section class="section" id="certs">
+  <div class="section-tag">// 06 · certifications</div>
+  <h2 class="section-title">Credentials & <em>Learning</em></h2>
+  <div class="certs-grid">
+    <a class="cert-card" href="DFIR.pdf" target="_blank">
+      <div class="cert-badge">🛡️</div>
+      <div>
+        <div class="cert-issuer">IBM · Coursera</div>
+        <div class="cert-title">Incident Response and Digital Forensics</div>
+      </div>
+    </a>
+    <a class="cert-card" href="FoundationOfCyberSecurity.pdf" target="_blank">
+      <div class="cert-badge">🔐</div>
+      <div>
+        <div class="cert-issuer">Google · Coursera</div>
+        <div class="cert-title">Foundations of Cyber Security</div>
+      </div>
+    </a>
+    <a class="cert-card" href="AssetThreatVulnerabilityCertificate.pdf" target="_blank">
+      <div class="cert-badge">⚠️</div>
+      <div>
+        <div class="cert-issuer">Google · Coursera</div>
+        <div class="cert-title">Assets, Threats & Vulnerabilities</div>
+      </div>
+    </a>
+    <a class="cert-card" href="PenetrationTestingThreatHuntingAndCryptography.pdf" target="_blank">
+      <div class="cert-badge">🎯</div>
+      <div>
+        <div class="cert-issuer">IBM · Coursera</div>
+        <div class="cert-title">Penetration Testing, Threat Hunting & Cryptography</div>
+      </div>
+    </a>
+    <a class="cert-card" href="CyberToolAndCyberAttack.pdf" target="_blank">
+      <div class="cert-badge">🔧</div>
+      <div>
+        <div class="cert-issuer">Coursera</div>
+        <div class="cert-title">Cyber Tools & Cyber Attacks</div>
+      </div>
+    </a>
+    <a class="cert-card" href="DFE.pdf" target="_blank">
+      <div class="cert-badge">🧪</div>
+      <div>
+        <div class="cert-issuer">EC-Council</div>
+        <div class="cert-title">Digital Forensics Essentials (DFE)</div>
+      </div>
+    </a>
   </div>
 </section>
 
-<!-- CERTIFICATIONS -->
-<section id="certs">
-  <h2>Certifications</h2>
-  <div class="grid">
-    <a class="card" href="DFIR.pdf" target="_blank">
-      <h3>Incident Response and Digital Forensics</h3>
-      <p>IBM · Coursera</p>
-    </a>
+<div class="section-divider"><div class="divider-line"></div></div>
 
-    <a class="card" href="FoundationOfCyberSecurity.pdf" target="_blank">
-      <h3>Foundations of Cyber Security</h3>
-      <p>Google · Coursera</p>
-    </a>
-    <a class="card" href="AssetThreatVulnerabilityCertificate.pdf" target="_blank">
-      <h3>Assets, Threats & Vulnerabilities</h3>
-      <p>Google · Coursera</p>
-    </a>
-    <a class="card" href="CyberToolAndCyberAttack.pdf" target="_blank">
-      <h3>Cyber Tools & Cyber Attacks</h3>
-      <p>Coursera</p>
-    </a>
-    <a class="card" href="PenetrationTestingThreatHuntingAndCryptography.pdf" target="_blank">
-      <h3>Penetration Testing & Threat Hunting</h3>
-      <p>IBM · Coursera</p>
-    </a>
+<!-- ── CONTACT ────────────────────────────────────────────────────────── -->
+<section class="section" id="contact">
+  <div class="section-tag">// 07 · contact</div>
+  <h2 class="section-title">Let's <em>Connect</em></h2>
+  <div class="contact-wrap">
+    <div>
+      <p class="contact-text">I'm actively seeking entry-level opportunities in <strong style="color:var(--c1)">DFIR, SOC Analysis, and Threat Intelligence</strong>. Whether you're a forensic lab, a SOC team, or a security consultancy — I'd love to talk.</p>
+      <div class="contact-links">
+        <a class="contact-link" href="mailto:apprajapati9999@gmail.com">
+          <span class="cl-icon">✉️</span>
+          <div>
+            <div class="cl-label">Email</div>
+            <div class="cl-val">apprajapati9999@gmail.com</div>
+          </div>
+        </a>
+        <a class="contact-link" href="https://www.linkedin.com/in/iamiiit17/" target="_blank">
+          <span class="cl-icon">💼</span>
+          <div>
+            <div class="cl-label">LinkedIn</div>
+            <div class="cl-val">linkedin.com/in/iamiiit17</div>
+          </div>
+        </a>
+        <a class="contact-link" href="#">
+          <span class="cl-icon">📍</span>
+          <div>
+            <div class="cl-label">Location</div>
+            <div class="cl-val">Ahmedabad, Gujarat, India</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Terminal block -->
+    <div class="terminal">
+      <div class="term-header">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span class="term-title">amit@dfir ~ terminal</span>
+      </div>
+      <div class="term-body">
+        <div class="term-line"><span class="term-prompt">~</span> <span class="cmd">whoami</span></div>
+        <div class="term-line"><span class="val">Amit Prajapati — DFIR Specialist</span></div>
+        <div class="term-line" style="margin-top:.4rem"><span class="term-prompt">~</span> <span class="cmd">cat status.txt</span></div>
+        <div class="term-line"><span class="val">Currently: Digital Forensics Intern @ DFS</span></div>
+        <div class="term-line"><span class="val">Seeking: DFIR · SOC · Forensic Examiner roles</span></div>
+        <div class="term-line" style="margin-top:.4rem"><span class="term-prompt">~</span> <span class="cmd">ls certifications/</span></div>
+        <div class="term-line"><span class="val">IBM_DFIR.pdf &nbsp; Google_CyberSec.pdf</span></div>
+        <div class="term-line"><span class="val">IBM_PenTest.pdf &nbsp; EC_Council_DFE.pdf</span></div>
+        <div class="term-line" style="margin-top:.4rem"><span class="term-prompt">~</span> <span class="cmd">contact --send-email</span></div>
+        <div class="term-line"><span class="cmd" style="animation:blink .8s infinite">apprajapati9999@gmail.com▌</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
+<!-- ── FOOTER ─────────────────────────────────────────────────────────── -->
 <footer>
-  <div class="wrap">
-    <div>
-      <h4>Amit Prajapati</h4>
-      <p>MSc Cyber Security Student<br>Open to Internship & Fresher Roles</p>
-    </div>
-    <div>
-      <h4>Quick Links</h4>
-      <a href="#about">About</a><br>
-      <a href="#education">Education</a><br>
-      <a href="#skills">Skills</a><br>
-      <a href="#projects">Projects</a>
-    </div>
-    <div>
-      <h4>Contact</h4>
-      <p>Ahmedabad, Gujarat</p>
-      <a href="mailto:apprajapati9999@gmail.com">apprajapati9999@gmail.com</a><br>
-      <a href="https://www.linkedin.com/in/iamiiit17/" target="_blank">LinkedIn Profile</a>
-    </div>
+  <div class="footer-name">Amit Prajapati</div>
+  <div class="footer-sub">MSc Cyber Security · DFIR Specialist · Open to Opportunities</div>
+  <div class="footer-links">
+    <a href="#home">Home</a>
+    <a href="#about">About</a>
+    <a href="#experience">Experience</a>
+    <a href="#skills">Skills</a>
+    <a href="#projects">Projects</a>
+    <a href="#certs">Certifications</a>
+    <a href="mailto:apprajapati9999@gmail.com">Email</a>
+    <a href="https://www.linkedin.com/in/iamiiit17/" target="_blank">LinkedIn</a>
   </div>
-  <div class="copy">© 2026 Amit Prajapati · Cyber Security Portfolio</div>
+  <div class="copy">© 2026 Amit Prajapati · Built with precision ·
+    <span style="color:var(--c1)">DFIR | SOC | Cybersecurity</span>
+  </div>
 </footer>
 
+<!-- ══════════════════════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════════════════════ -->
 <script>
-function toggleMenu(){
-  document.getElementById("nav").classList.toggle("show");
+/* ── CURSOR ──────────────────────────────────────────────────────────── */
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+});
+function animRing(){
+  rx+=(mx-rx)*.12;ry+=(my-ry)*.12;
+  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+/* ── MOBILE NAV ──────────────────────────────────────────────────────── */
+function toggleNav(){
+  document.getElementById('nav').classList.toggle('open');
 }
 
-const sections = document.querySelectorAll("section");
-const observer = new IntersectionObserver(entries=>{
-  entries.forEach(entry=>{
-    if(entry.isIntersecting){
-      entry.target.classList.add("show");
-    }
+/* ── TYPEWRITER ──────────────────────────────────────────────────────── */
+const phrases=[
+  'Digital Forensics Analyst',
+  'Incident Response Specialist',
+  'SOC Analyst',
+  'Malware Researcher',
+  'Threat Intelligence Analyst'
+];
+let pi=0,ci=0,deleting=false;
+const tw=document.getElementById('typewriter');
+function type(){
+  const phrase=phrases[pi];
+  if(!deleting){
+    ci++;
+    tw.innerHTML=phrase.slice(0,ci)+'<span class="cursor-blink">|</span>';
+    if(ci===phrase.length){deleting=true;setTimeout(type,1800);return;}
+  } else {
+    ci--;
+    tw.innerHTML=phrase.slice(0,ci)+'<span class="cursor-blink">|</span>';
+    if(ci===0){deleting=false;pi=(pi+1)%phrases.length;}
+  }
+  setTimeout(type,deleting?50:85);
+}
+setTimeout(type,600);
+
+/* ── INTERSECTION OBSERVER ───────────────────────────────────────────── */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting) e.target.classList.add('visible','show');
   });
-},{threshold:0.15});
+},{threshold:.12});
 
-sections.forEach(section=>observer.observe(section));
+document.querySelectorAll('.section,.tl-item').forEach(el=>obs.observe(el));
+
+/* ── THREE.JS 3D SCENE ───────────────────────────────────────────────── */
+(function(){
+  const canvas=document.getElementById('three-canvas');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  renderer.setClearColor(0x000000,0);
+
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,.1,1000);
+  camera.position.set(0,0,28);
+
+  /* ── Floating hexagonal nodes (network graph) */
+  const nodeGeo=new THREE.IcosahedronGeometry(.3,1);
+  const nodeMat=new THREE.MeshBasicMaterial({color:0x00f5c4,wireframe:true});
+
+  const nodes=[];
+  const nodeCount=60;
+  for(let i=0;i<nodeCount;i++){
+    const mesh=new THREE.Mesh(nodeGeo,nodeMat.clone());
+    mesh.position.set(
+      (Math.random()-.5)*60,
+      (Math.random()-.5)*40,
+      (Math.random()-.5)*20
+    );
+    const s=Math.random()*.6+.2;
+    mesh.scale.set(s,s,s);
+    mesh.userData={
+      vx:(Math.random()-.5)*.012,
+      vy:(Math.random()-.5)*.012,
+      vz:(Math.random()-.5)*.006,
+      rotX:Math.random()*.01,
+      rotY:Math.random()*.01,
+    };
+    scene.add(mesh);
+    nodes.push(mesh);
+  }
+
+  /* ── Particle field */
+  const pCount=1800;
+  const pPos=new Float32Array(pCount*3);
+  const pCol=new Float32Array(pCount*3);
+  for(let i=0;i<pCount;i++){
+    pPos[i*3]=(Math.random()-.5)*120;
+    pPos[i*3+1]=(Math.random()-.5)*80;
+    pPos[i*3+2]=(Math.random()-.5)*50;
+    const t=Math.random();
+    if(t<.5){pCol[i*3]=0;pCol[i*3+1]=.96;pCol[i*3+2]=.77;}
+    else{pCol[i*3]=.49;pCol[i*3+1]=.23;pCol[i*3+2]=.93;}
+  }
+  const pGeo=new THREE.BufferGeometry();
+  pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+  pGeo.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+  const pMat=new THREE.PointsMaterial({size:.12,vertexColors:true,transparent:true,opacity:.6});
+  const points=new THREE.Points(pGeo,pMat);
+  scene.add(points);
+
+  /* ── Connection lines between nearby nodes */
+  const lineMat=new THREE.LineBasicMaterial({color:0x00f5c4,transparent:true,opacity:.15});
+  const lineGroup=new THREE.Group();
+  scene.add(lineGroup);
+
+  function updateLines(){
+    while(lineGroup.children.length) lineGroup.remove(lineGroup.children[0]);
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const d=nodes[i].position.distanceTo(nodes[j].position);
+        if(d<10){
+          const geo=new THREE.BufferGeometry().setFromPoints([
+            nodes[i].position.clone(),nodes[j].position.clone()
+          ]);
+          const line=new THREE.Line(geo,lineMat);
+          lineGroup.add(line);
+        }
+      }
+    }
+  }
+  updateLines();
+
+  /* ── Large rotating torus */
+  const torusGeo=new THREE.TorusGeometry(12,0.04,8,120);
+  const torusMat=new THREE.MeshBasicMaterial({color:0x00f5c4,transparent:true,opacity:.1});
+  const torus=new THREE.Mesh(torusGeo,torusMat);
+  torus.rotation.x=Math.PI/3;
+  scene.add(torus);
+
+  const torus2Geo=new THREE.TorusGeometry(18,0.03,6,120);
+  const torus2=new THREE.Mesh(torus2Geo,new THREE.MeshBasicMaterial({color:0x7c3aed,transparent:true,opacity:.07}));
+  torus2.rotation.x=Math.PI/5;torus2.rotation.y=Math.PI/4;
+  scene.add(torus2);
+
+  /* ── Mouse parallax */
+  let mouseX=0,mouseY=0;
+  document.addEventListener('mousemove',e=>{
+    mouseX=(e.clientX/window.innerWidth-.5)*2;
+    mouseY=(e.clientY/window.innerHeight-.5)*2;
+  });
+
+  let lineTimer=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    const t=Date.now()*.001;
+
+    nodes.forEach(n=>{
+      n.position.x+=n.userData.vx;
+      n.position.y+=n.userData.vy;
+      n.position.z+=n.userData.vz;
+      n.rotation.x+=n.userData.rotX;
+      n.rotation.y+=n.userData.rotY;
+      if(Math.abs(n.position.x)>30){n.userData.vx*=-1;}
+      if(Math.abs(n.position.y)>20){n.userData.vy*=-1;}
+      if(Math.abs(n.position.z)>10){n.userData.vz*=-1;}
+    });
+
+    lineTimer++;
+    if(lineTimer%40===0) updateLines();
+
+    points.rotation.y=t*.02;
+    points.rotation.x=t*.008;
+    torus.rotation.z=t*.06;
+    torus2.rotation.z=-t*.04;
+
+    camera.position.x+=(mouseX*3-camera.position.x)*.03;
+    camera.position.y+=(-mouseY*2-camera.position.y)*.03;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene,camera);
+  }
+  animate();
+
+  window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  });
+})();
 </script>
-
 </body>
 </html>
